@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/auth"
+    },
+    {
+      "path": "./apps/users"
+    },
+    {
+      "path": "./apps/files"
+    },
+    {
+      "path": "./apps/chat"
+    },
+    {
+      "path": "./libs/common"
+    },
+    {
+      "path": "./libs/models"
+    }
+  ],
+  "compilerOptions": {}
+}
