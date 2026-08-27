@@ -24,7 +24,9 @@
     "ignoreDeprecations": "6.0",
     "paths": {
       "@sharing/common": ["libs/common/src/index.ts"],
-      "@sharing/models": ["libs/models/src/index.ts"]
+      "@sharing/models": ["libs/models/src/index.ts"],
+      "@sharing/smc": ["libs/smc/gridfs/src/index.ts"],
+      "@sharing/interface/smc": ["libs/smc/interface/index.ts"]
     }
   }
 }

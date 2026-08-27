@@ -9,6 +9,12 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
+    "@grpc/grpc-js": "^1.14.4",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/microservices": "^11.2.3",
+    "@nestjs/mongoose": "^11.0.4",
+    "@nestjs/passport": "^11.0.5",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
     "@nx/js": "23.1.1",
@@ -19,17 +25,25 @@
     "@swc-node/register": "1.11.1",
     "@swc/core": "1.15.8",
     "@swc/helpers": "0.5.18",
+    "@types/bcrypt": "^6.0.0",
+    "@types/multer": "^2.2.0",
     "@types/node": "^24.0.0",
+    "@types/passport-jwt": "^4.0.1",
+    "bcrypt": "^6.0.0",
     "commitizen": "^4.3.2",
     "cz-conventional-changelog": "^3.3.0",
     "husky": "^9.1.7",
+    "mongoose": "^9.9.4",
+    "nestjs-zod": "^5.5.0",
     "nx": "23.1.1",
+    "passport-jwt": "^4.0.1",
     "prettier": "^3.8.1",
     "tslib": "^2.3.0",
     "typescript": "~6.0.3",
     "webpack": "^5.101.3",
     "webpack-cli": "^7.0.0",
-    "webpack-dev-server": "^5.2.1"
+    "webpack-dev-server": "^5.2.1",
+    "zod": "^4.4.3"
   },
   "workspaces": [
     "packages/*",
@@ -37,12 +51,15 @@
     "apps/auth/*",
     "apps/users/*",
     "apps/*",
-    "libs/*"
+    "libs/*",
+    "libs/smc/*"
   ],
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
-    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/platform-express": "^11.2.3",
+    "multer": "^2.2.0",
+    "multer-gridfs-storage": "^6.1.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0"
   },
