@@ -17,6 +17,7 @@ module.exports = {
       tsConfig: './tsconfig.app.json',
       assets: ['./src/assets'],
       optimization: false,
+      useTsconfigPaths: true,
       outputHashing: 'none',
       generatePackageJson: false,
       sourceMap: true,
