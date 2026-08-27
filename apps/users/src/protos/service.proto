@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package users;
+import "users.proto";
+
+service UsersService {
+  rpc CreateUser(User) returns (User) {};
+}
