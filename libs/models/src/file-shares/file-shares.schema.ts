@@ -18,7 +18,7 @@ export class FileShareLinkModel {
     required: true,
     index: true,
   })
-  fileId!: mongoose.Schema.Types.ObjectId;
+  fileId!: mongoose.Types.ObjectId;
 
   @Prop({
     required: true,
