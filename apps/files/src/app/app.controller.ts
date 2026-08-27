@@ -20,7 +20,6 @@ import type { Response } from 'express';
 import { CurrentUser, JwtAuthGuard } from '@sharing/common';
 import { FileShareLinkService } from './file-share-link.service';
 import { UrlMappingInterceptor } from './url-mapping.interceptor';
-import { memoryStorage } from 'multer';
 
 @Controller('files')
 export class AppController {
@@ -33,7 +32,6 @@ export class AppController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FilesInterceptor('file', 10, {
-      storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )

@@ -68,12 +68,15 @@ export class AppService {
         throw new HttpException('Không tìm thấy file', HttpStatus.NOT_FOUND);
       })
       .then((result) => result);
+    const fileUpload = await this.fileUploadModel.findOne({
+      gridfsFileId: new Types.ObjectId(id),
+    });
     return {
-      filename: result.filename,
-      length: result.length,
+      filename: fileUpload?.name || result.filename,
+      length: fileUpload?.size || result.length,
       chunkSize: result.chunkSize,
       metadata: result.metadata,
-      contentType: result.contentType,
+      contentType: fileUpload?.contentType || result.contentType,
       uploadDate: result.uploadDate ?? undefined,
     };
   }
