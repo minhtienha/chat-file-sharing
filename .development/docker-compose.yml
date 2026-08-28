@@ -1,0 +1,25 @@
+services:
+  mongodb:
+    image: bitnamilegacy/mongodb:6.0.9-debian-11-r7
+    # environment:
+    #   - MONGODB_ROOT_PASSWORD=your_secure_root_password
+    #   - MONGODB_USERNAME=your_username
+    #   - MONGODB_PASSWORD=your_password
+    #   - MONGODB_DATABASE=your_database
+    ports:
+      - '27017:27017'
+    volumes:
+      - 'mongodb_data:/bitnami/mongodb'
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'mongosh --quiet --eval "db.adminCommand({ ping: 1 }).ok" | grep 1',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  mongodb_data:
