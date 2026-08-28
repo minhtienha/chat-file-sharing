@@ -1,107 +1,123 @@
-# New Nx Repository
+# realtime-file-sharing
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+Backend chia sẻ tệp và chat thời gian thực, được xây dựng bằng NestJS trong một Nx monorepo. Hệ thống gồm các API HTTP, WebSocket cho chat, gRPC nội bộ giữa `auth` và `users`, cùng MongoDB/GridFS để lưu dữ liệu và tệp.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+## 1. Khởi động nhanh
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/docs/technologies/typescript/introduction?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
-🚀 If you haven't connected to Nx Cloud yet, [complete your setup here](https://cloud.nx.app/get-started). Get faster builds with remote caching, distributed task execution, and self-healing CI. [See how your workspace can benefit](#nx-cloud).
-## Generate a library
+### Bước 1: Clone và cài dependencies
 
-```sh
-npx nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
+```bash
+npm install
 ```
 
-## Run tasks
+### Bước 2: Tạo biến môi trường
 
-To build the library use:
+Tạo file `.env` ở thư mục gốc:
 
-```sh
-npx nx run pkg1:build
+```env
+MONGODB_URI=mongodb://127.0.0.1:27017/realtime_file_sharing
+JWT_SECRET=replace-with-a-long-random-secret
+USERS_GRPC_URL=127.0.0.1:5000
 ```
 
-To run any task with Nx use:
+### Bước 3: Khởi động MongoDB
 
-```sh
-npx nx run <project-name>:<target>
+```bash
+docker compose -f .development/docker-compose.yml up -d
 ```
 
-These targets are either [inferred automatically](https://nx.dev/docs/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+### Bước 4: Chạy các service
 
-[More about running tasks in the docs &raquo;](https://nx.dev/docs/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Chạy tất cả service trong các process do Nx quản lý:
 
-## Versioning and releasing
-
-To version and release the library use
-
-```
-npx nx release
+```bash
+npm start
 ```
 
-Pass `--dry-run` to see what would happen without actually releasing the library.
+Hoặc chạy riêng từng service:
 
-[Learn more about Nx release &raquo;](https://nx.dev/docs/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Keep TypeScript project references up to date
-
-Nx automatically updates TypeScript [project references](https://www.typescriptlang.org/docs/handbook/project-references.html) in `tsconfig.json` files to ensure they remain accurate based on your project dependencies (`import` or `require` statements). This sync is automatically done when running tasks such as `build` or `typecheck`, which require updated references to function correctly.
-
-To manually trigger the process to sync the project graph dependencies information to the TypeScript project references, run the following command:
-
-```sh
-npx nx sync
+```bash
+npx nx serve auth
+npx nx serve users
+npx nx serve files
+npx nx serve chat
 ```
 
-You can enforce that the TypeScript project references are always in the correct state when running in CI by adding a step to your CI job configuration that runs the following command:
+## 3. Kiến trúc
 
-```sh
-npx nx sync:check
+```mermaid
+flowchart LR
+    Client[Client / Web App]
+    Auth[Auth API\nHTTP :3000]
+    Users[Users API + gRPC\nHTTP :3001 / gRPC :5000]
+    Chat[Chat API + WebSocket\nHTTP :3003]
+    Files[Files API\nHTTP :3002]
+    Mongo[(MongoDB\nDatabase + GridFS :27017)]
+
+    Client --> Auth
+    Client --> Users
+    Client --> Chat
+    Client --> Files
+    Auth -->|gRPC| Users
+    Auth --> Mongo
+    Users --> Mongo
+    Chat --> Mongo
+    Files --> Mongo
 ```
 
-[Learn more about nx sync](https://nx.dev/reference/nx-commands#sync)
+### Luồng đăng ký và đăng nhập
 
-## Nx Cloud
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Auth as Auth API
+    participant Users as Users gRPC
+    participant DB as MongoDB
 
-Nx Cloud ensures a [fast and scalable CI](https://nx.dev/nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/docs/features/ci-features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/docs/features/ci-features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/docs/features/ci-features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/docs/features/ci-features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Set up CI (non-Github Actions CI)
-
-**Note:** This is only required if your CI provider is not GitHub Actions.
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
+    Client->>Auth: POST /api/auth/register
+    Auth->>Users: CreateUser
+    Users->>DB: Lưu user với password hash
+    DB-->>Users: User
+    Users-->>Auth: User
+    Auth-->>Client: User
+    Client->>Auth: POST /api/auth/login
+    Auth->>DB: Kiểm tra email và password
+    Auth-->>Client: accessToken + refreshToken
 ```
 
-[Learn more about Nx on CI](https://nx.dev/docs/features/ci-features?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### Luồng chat và chia sẻ tệp
 
-## Install Nx Console
+```mermaid
+sequenceDiagram
+    participant ClientA as Client A
+    participant Chat as Chat API / WebSocket
+    participant Files as Files API
+    participant DB as MongoDB / GridFS
+    participant ClientB as Client B
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+    ClientB->>Chat: Kết nối WebSocket và joinRoom
+    ClientA->>Files: POST /api/files (multipart file)
+    Files->>DB: Lưu binary vào GridFS
+    Files->>DB: Lưu metadata file
+    DB-->>Files: fileId
+    Files-->>ClientA: Thông tin file
+    ClientA->>Chat: POST /api/chat-rooms/:roomId/messages
+    Chat->>DB: Lưu message
+    Chat-->>ClientB: newMessage qua WebSocket
+```
 
-[Install Nx Console &raquo;](https://nx.dev/docs/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## 4. Cấu trúc thư mục
 
-## 🔗 Learn More
-
-- [Nx Documentation](https://nx.dev/docs)
-- [Crafting Your Workspace Tutorial](https://nx.dev/docs/getting-started/tutorials/crafting-your-workspace)
-- [Module Boundaries](https://nx.dev/docs/features/enforce-module-boundaries)
-- [Releasing Packages](https://nx.dev/docs/features/manage-releases)
-- [Nx Plugins](https://nx.dev/docs/concepts/nx-plugins)
-- [Nx Cloud](https://nx.dev/nx-cloud)
-
-## 💬 Community
-
-Join the Nx community:
-
-- [Discord](https://go.nx.dev/community)
-- [X (Twitter)](https://twitter.com/nxdevtools)
-- [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [YouTube](https://www.youtube.com/@nxdevtools)
-- [Blog](https://nx.dev/blog)
+```text
+apps/
+  auth/      # Đăng ký, đăng nhập, JWT và client gRPC tới users
+  users/     # Quản lý user qua HTTP và gRPC
+  chat/      # Phòng chat, message và Socket.IO gateway
+  files/     # Upload, download và share link qua GridFS
+libs/
+  common/    # MongoDB, JWT strategy, guard và decorator dùng chung
+  models/    # Mongoose schema và DTO dùng chung
+  smc/gridfs # Cấu hình Multer GridFS
+.development/
+  docker-compose.yml # MongoDB cho môi trường development
+```

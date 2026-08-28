@@ -3,7 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "start": "nx run-many --target=serve --projects=auth,users,files,chat --parallel=4",
+    "start:dev": "nx run-many --target=serve --projects=auth,users,files,chat --parallel=4",
+    "build:all": "nx run-many --target=build --projects=auth,users,files,chat --parallel=4"
   },
   "private": true,
   "devDependencies": {
