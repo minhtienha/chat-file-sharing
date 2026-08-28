@@ -26,19 +26,19 @@ export class DefaultSchema {
     type: mongoose.Schema.Types.ObjectId,
     ref: User?.name ?? 'User',
   })
-  createdBy?: string | mongoose.Schema.Types.ObjectId | UserDocument;
+  createdBy?: string | mongoose.Types.ObjectId | UserDocument;
 
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     ref: User?.name ?? 'User',
   })
-  deletedBy?: string | mongoose.Schema.Types.ObjectId | UserDocument;
+  deletedBy?: string | mongoose.Types.ObjectId | UserDocument;
 
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     ref: User?.name ?? 'User',
   })
-  updatedBy?: string | mongoose.Schema.Types.ObjectId | UserDocument;
+  updatedBy?: string | mongoose.Types.ObjectId | UserDocument;
 
   @Prop()
   tenant?: string;

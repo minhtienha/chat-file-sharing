@@ -7,3 +7,4 @@ export * from './message/index';
 export * from './chat-room/index';
 export * from './dto/index';
 export * from './common/index';
+export * from './chat-room-member/index';
