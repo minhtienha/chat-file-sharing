@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MessageModule } from './message/message.module';
 import { RoomModule } from './room/room.module';
+import { ChatGatewayModule } from './chat-gateway/chat-gateway.module';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { CommonModule } from '@sharing/common';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -35,6 +36,7 @@ import {
     ]),
     MessageModule,
     RoomModule,
+    ChatGatewayModule,
   ],
   controllers: [AppController],
   providers: [

@@ -29,13 +29,7 @@ export class MessageController {
     @Param('roomId') roomId: string,
     @Body() createMessageDto: CreateMessageDto,
   ) {
-    console.log('Incoming User data:', user);
-    console.log('Incoming createMessageDto data:', createMessageDto);
     const senderId = user._id.toString();
-    console.log('Lỗi ngay senderID');
-    console.log('Incoming senderId data:', senderId);
-    console.log('Incoming User data:', user);
-    console.log('Incoming createMessageDto data:', createMessageDto);
     return this.messageService.sendMessage(roomId, senderId, createMessageDto);
   }
 

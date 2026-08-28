@@ -15,6 +15,7 @@ import {
   QueryMessageDto,
 } from '@sharing/models';
 import { Model, Types } from 'mongoose';
+import { ChatGateway } from '../chat-gateway/chat-gateway';
 
 @Injectable()
 export class MessageService {
@@ -25,6 +26,7 @@ export class MessageService {
     private chatRoomModel: Model<ChatRoomDocument>,
     @InjectModel(ChatRoomMember.name)
     private chatRoomMemberModel: Model<ChatRoomMemberDocument>,
+    private readonly chatGateway: ChatGateway,
   ) {}
 
   async sendMessage(
@@ -61,6 +63,11 @@ export class MessageService {
       },
       { __isDeleted: false },
     );
+
+    const targetRoom = roomId.toString();
+
+    console.log(`[API] Đang emit tin nhắn tới room: ${targetRoom}`);
+    this.chatGateway.emitNewMessage(targetRoom, message);
 
     return message;
   }

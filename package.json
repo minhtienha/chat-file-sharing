@@ -58,6 +58,8 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.2.3",
+    "@nestjs/platform-socket.io": "^11.2.3",
+    "@nestjs/websockets": "^11.2.3",
     "multer": "^2.2.0",
     "multer-gridfs-storage": "^6.1.0",
     "reflect-metadata": "^0.2.0",

@@ -10,6 +10,7 @@ import {
   Message,
   MessageSchema,
 } from '@sharing/models';
+import { ChatGatewayModule } from '../chat-gateway/chat-gateway.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import {
         schema: ChatRoomMemberSchema,
       },
     ]),
+    ChatGatewayModule,
   ],
   controllers: [MessageController],
   providers: [MessageService],
