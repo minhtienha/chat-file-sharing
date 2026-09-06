@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="primaryGradient" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6366F1" />
+      <stop offset="1" stop-color="#4F46E5" />
+    </linearGradient>
+    <linearGradient id="bubbleGradient" x1="14" y1="14" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#EEF2FF" />
+    </linearGradient>
+  </defs>
+
+  <!-- Nền Squircle bo tròn phong cách iOS/macOS -->
+  <rect width="48" height="48" rx="14" fill="url(#primaryGradient)" />
+
+  <!-- Bong bóng tin nhắn chính -->
+  <path
+    d="M14 22C14 17.5817 17.5817 14 22 14H26C30.4183 14 34 17.5817 34 22C34 26.4183 30.4183 30 26 30H20L15 34V24C14.3642 23.4137 14 22.7297 14 22Z"
+    fill="url(#bubbleGradient)"
+  />
+
+  <!-- Dấu 3 chấm biểu thị typing/chat -->
+  <circle cx="21" cy="22" r="1.5" fill="#4F46E5" />
+  <circle cx="25" cy="22" r="1.5" fill="#4F46E5" />
+  <circle cx="29" cy="22" r="1.5" fill="#4F46E5" />
+</svg>
