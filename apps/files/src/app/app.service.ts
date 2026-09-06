@@ -82,10 +82,36 @@ export class AppService {
   }
 
   async getMyFiles(ownerId: string | Types.ObjectId) {
-    return await this.fileUploadModel
-      .find({ ownerId: new Types.ObjectId(ownerId) })
-      .sort({ createdAt: -1 })
-      .exec();
+    return await this.fileUploadModel.aggregate([
+      { $match: { ownerId: new Types.ObjectId(ownerId) } },
+      {
+        $lookup: {
+          from: 'file_share_links',
+          let: { fileId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$fileId', '$$fileId'] },
+                    { $eq: ['$isActive', true] },
+                    { $gt: ['$expiryDate', new Date()] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'activeShares',
+        },
+      },
+      {
+        $addFields: {
+          isShared: { $gt: [{ $size: '$activeShares' }, 0] },
+        },
+      },
+      { $project: { activeShares: 0 } },
+      { $sort: { createdAt: -1 } },
+    ]);
   }
 
   async deleteFile(fileId: string, currentUserId: string | Types.ObjectId) {
@@ -108,7 +134,12 @@ export class AppService {
     const gridfsId = fileDoc.gridfsFileId.toString();
     try {
       await this.fileModel.delete(gridfsId);
-    } catch (err) {}
+    } catch (err) {
+      throw new HttpException(
+        'Không thể xóa file trong GridFS',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
 
     await this.fileUploadModel.deleteOne({ _id: fileDoc._id });
 

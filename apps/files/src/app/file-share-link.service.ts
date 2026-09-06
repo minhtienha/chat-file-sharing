@@ -101,4 +101,34 @@ export class FileShareLinkService {
       expiryDate: shareLink.expiryDate,
     };
   }
+
+  async getFileShareLinks(
+    fileId: string,
+    currentUserId: string | Types.ObjectId,
+  ) {
+    const file = await this.fileUploadModel.findById(fileId);
+    if (!file) throw new NotFoundException('File không tồn tại');
+    if (file.ownerId.toString() !== currentUserId.toString()) {
+      throw new ForbiddenException('Bạn không có quyền xem thông tin tệp này');
+    }
+
+    return await this.shareLinkModel
+      .find({ fileId: new Types.ObjectId(fileId) })
+      .sort({ createdAt: -1 });
+  }
+
+  async deleteShareLink(token: string, currentUserId: string | Types.ObjectId) {
+    const shareLink = await this.shareLinkModel
+      .findOne({ linkToken: token })
+      .populate('fileId');
+    if (!shareLink) throw new NotFoundException('Liên kết không tồn tại');
+
+    const fileUpload = shareLink.fileId as any;
+    if (fileUpload.ownerId.toString() !== currentUserId.toString()) {
+      throw new ForbiddenException('Bạn không có quyền xóa liên kết này');
+    }
+
+    await this.shareLinkModel.deleteOne({ linkToken: token });
+    return { message: 'Đã xóa liên kết chia sẻ' };
+  }
 }

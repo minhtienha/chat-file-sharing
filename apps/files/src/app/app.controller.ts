@@ -66,7 +66,6 @@ export class AppController {
 
   @Post(':id/share')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(UrlMappingInterceptor)
   async createShareLink(
     @Param('id') fileId: string,
     @Body() body: { expireInHours: number },
@@ -163,5 +162,26 @@ export class AppController {
     @Param('id') id: string,
   ) {
     return await this.appService.deleteFile(id, currentUser._id);
+  }
+
+  @Get(':id/shares')
+  @UseGuards(JwtAuthGuard)
+  async getFileShareLinks(
+    @CurrentUser() currentUser: UserDocument,
+    @Param('id') fileId: string,
+  ) {
+    return await this.shareLinkService.getFileShareLinks(
+      fileId,
+      currentUser._id,
+    );
+  }
+
+  @Delete('shared/:token')
+  @UseGuards(JwtAuthGuard)
+  async deleteShareLink(
+    @CurrentUser() currentUser: UserDocument,
+    @Param('token') token: string,
+  ) {
+    return await this.shareLinkService.deleteShareLink(token, currentUser._id);
   }
 }
