@@ -64,3 +64,5 @@ apps/*/dist
 
 libs/smc/gridfs/src/lib
 libs/smc/interface
+
+vite.config.*.timestamp*
