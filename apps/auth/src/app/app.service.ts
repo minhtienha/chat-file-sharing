@@ -108,19 +108,23 @@ export class AppService implements OnModuleInit {
   private hashToken(token: string): string {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
-  async refreshToken(refreshToken: string) {
-    const refreshTokenHash = this.hashToken(refreshToken);
+
+  async refreshToken(rawRefreshToken: string) {
+    const refreshTokenHash = this.hashToken(rawRefreshToken);
 
     const auth = await this.authModel.findOne({
       token: refreshTokenHash,
     });
+
     if (!auth || auth.expiresAt < new Date()) {
       throw new UnauthorizedException(
         'Refresh token không hợp lệ hoặc đã hết hạn',
       );
     }
 
-    const user = await this.usersModel.findOne({ _id: auth.user });
+    await this.authModel.deleteOne({ _id: auth._id });
+
+    const user = await this.usersModel.findById(auth.user);
 
     if (!user || user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException(
@@ -128,7 +132,7 @@ export class AppService implements OnModuleInit {
       );
     }
 
-    return this.generateTokens(user.id, user.email);
+    return this.generateTokens(user._id.toString(), user.email);
   }
 
   async logout(refreshToken: string) {

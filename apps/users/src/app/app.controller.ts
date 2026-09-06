@@ -1,6 +1,6 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser, JwtAuthGuard } from '@sharing/common';
-import { User } from '@sharing/models';
+import { User, type UserDocument } from '@sharing/models';
 import { AppService } from './app.service';
 
 @Controller('users')
@@ -11,5 +11,13 @@ export class AppController {
   @Get('me')
   getMe(@CurrentUser() user: User) {
     return user;
+  }
+
+  @Get('search')
+  async searchUsers(
+    @CurrentUser() user: UserDocument,
+    @Query('q') query: string,
+  ) {
+    return this.appService.searchUsers(query, user._id.toString());
   }
 }

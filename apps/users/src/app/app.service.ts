@@ -30,4 +30,20 @@ export class AppService {
   private async hashPassword(password: string): Promise<string> {
     return await bcrypt.hash(password, 10);
   }
+
+  async searchUsers(query: string, currentUserId: string) {
+    const regex = new RegExp(query, 'i');
+    const users = await this.usersService
+      .find({
+        $and: [
+          { _id: { $ne: currentUserId } },
+          {
+            $or: [{ name: regex }, { email: regex }],
+          },
+        ],
+      })
+      .select('-passwordHash')
+      .exec();
+    return users;
+  }
 }
