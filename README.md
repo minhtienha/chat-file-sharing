@@ -1,6 +1,7 @@
-# realtime-file-sharing
+Nền tảng chia sẻ tệp và nhắn tin thời gian thực toàn diện, quản lý bằng Nx monorepo:
 
-Backend chia sẻ tệp và chat thời gian thực, được xây dựng bằng NestJS trong một Nx monorepo. Hệ thống gồm các API HTTP, WebSocket cho chat, gRPC nội bộ giữa `auth` và `users`, cùng MongoDB/GridFS để lưu dữ liệu và tệp.
+- **Frontend (`my-app`):** Giao diện người dùng web client.
+- **Backend Microservices:** Các service NestJS chuyên biệt (`auth`, `users`, `files`, `chat`) kết hợp HTTP, gRPC, Socket.IO và MongoDB/GridFS.
 
 ## 1. Khởi động nhanh
 
@@ -31,10 +32,18 @@ docker compose -f .development/docker-compose.yml up -d
 Chạy tất cả service trong các process do Nx quản lý:
 
 ```bash
-npm start
+npm run start:dev
 ```
 
 Hoặc chạy riêng từng service:
+
+**Frontend**
+
+```bash
+npx nx serve my-app
+```
+
+**Backend**
 
 ```bash
 npx nx serve auth
@@ -43,7 +52,7 @@ npx nx serve files
 npx nx serve chat
 ```
 
-## 3. Kiến trúc
+## 2. Kiến trúc
 
 ```mermaid
 flowchart LR
@@ -75,13 +84,16 @@ sequenceDiagram
     participant DB as MongoDB
 
     Client->>Auth: POST /api/auth/register
-    Auth->>Users: CreateUser
+    Auth->>Users: CreateUser (gRPC)
     Users->>DB: Lưu user với password hash
-    DB-->>Users: User
+    DB-->>Users: User created
     Users-->>Auth: User
-    Auth-->>Client: User
+    Auth-->>Client: Thành công
+
     Client->>Auth: POST /api/auth/login
-    Auth->>DB: Kiểm tra email và password
+    Auth->>DB: findOne({ email })
+    DB-->>Auth: Trả về user & passwordHash
+    Auth->>Auth: Kiểm tra status & bcrypt.compare()
     Auth-->>Client: accessToken + refreshToken
 ```
 
@@ -97,22 +109,22 @@ sequenceDiagram
 
     ClientB->>Chat: Kết nối WebSocket và joinRoom
     ClientA->>Files: POST /api/files (multipart file)
-    Files->>DB: Lưu binary vào GridFS
-    Files->>DB: Lưu metadata file
+    Files->>DB: Lưu binary vào GridFS & metadata
     DB-->>Files: fileId
     Files-->>ClientA: Thông tin file
-    ClientA->>Chat: POST /api/chat-rooms/:roomId/messages
+    ClientA->>Chat: POST /api/chat-rooms/:roomId/messages (kèm fileId)
     Chat->>DB: Lưu message
-    Chat-->>ClientB: newMessage qua WebSocket
+    Chat-->>ClientB: Event newMessage qua WebSocket
 ```
 
-## 4. Cấu trúc thư mục
+## 3. Cấu trúc thư mục
 
 ```text
 apps/
   auth/      # Đăng ký, đăng nhập, JWT và client gRPC tới users
   users/     # Quản lý user qua HTTP và gRPC
   chat/      # Phòng chat, message và Socket.IO gateway
+  my-app/     # Ứng dụng web frontend (React)
   files/     # Upload, download và share link qua GridFS
 libs/
   common/    # MongoDB, JWT strategy, guard và decorator dùng chung
