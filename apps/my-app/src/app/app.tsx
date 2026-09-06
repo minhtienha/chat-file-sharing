@@ -12,6 +12,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import { AuthInit } from './components/auth/AuthInit';
 import { useBearerTokenStore } from './stores/auth.store';
+import DrivePage from './pages/DrivePage';
 
 const RouteGuard = ({ isProtected }: { isProtected?: boolean }) => {
   const token = useBearerTokenStore((state) => state.accessToken);
@@ -36,6 +37,7 @@ const router = createBrowserRouter(
         <Route element={<MainLayout />}>
           <Route path="/" element={<ChatPage />} />
           <Route path="/chat" element={<ChatPage />} />
+          <Route path="/drive" element={<DrivePage />} />
         </Route>
       </Route>
 

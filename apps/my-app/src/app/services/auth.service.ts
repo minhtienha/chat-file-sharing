@@ -74,3 +74,14 @@ export const getMe = async () => {
 
   return res.json();
 };
+
+export const logoutApi = async () => {
+  const res = await fetch(`${AUTH_API_URL}/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new Error('Đăng xuất thất bại');
+  }
+  return res.json();
+};
