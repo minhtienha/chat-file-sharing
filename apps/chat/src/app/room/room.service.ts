@@ -32,33 +32,43 @@ export class RoomService {
     const isDirectChat = memberIdsArray.length === 2;
 
     if (isDirectChat) {
-      const existingMemberDocs = await this.chatRoomMemberModel
-        .find({
-          userId: { $in: memberIdsArray.map((id) => new Types.ObjectId(id)) },
-        })
-        .exec();
+      const memberObjectIds = memberIdsArray.map(
+        (id) => new Types.ObjectId(id),
+      );
 
-      const roomCounts = new Map<string, number>();
-      existingMemberDocs.forEach((doc) => {
-        const rId = doc.roomId.toString();
-        roomCounts.set(rId, (roomCounts.get(rId) || 0) + 1);
-      });
-
-      for (const [roomId, count] of roomCounts.entries()) {
-        if (count === 2) {
-          const room = await this.chatRoomModel.findById(roomId);
-          if (room) {
-            await this.chatRoomMemberModel.updateMany(
-              {
-                roomId: new Types.ObjectId(roomId),
-                userId: {
-                  $in: memberIdsArray.map((id) => new Types.ObjectId(id)),
-                },
+      const directRooms = await this.chatRoomMemberModel.aggregate([
+        {
+          $group: {
+            _id: '$roomId',
+            totalMembers: { $sum: 1 },
+            matchedMembers: {
+              $sum: {
+                $cond: [{ $in: ['$userId', memberObjectIds] }, 1, 0],
               },
-              { __isDeleted: false },
-            );
-            return room;
-          }
+            },
+          },
+        },
+        {
+          $match: {
+            totalMembers: 2,
+            matchedMembers: 2,
+          },
+        },
+      ]);
+
+      if (directRooms.length > 0) {
+        const existingRoomId = directRooms[0]._id;
+        const room = await this.chatRoomModel.findById(existingRoomId);
+
+        if (room) {
+          await this.chatRoomMemberModel.updateMany(
+            {
+              roomId: existingRoomId,
+              userId: { $in: memberObjectIds },
+            },
+            { __isDeleted: false },
+          );
+          return room;
         }
       }
     }
@@ -87,12 +97,14 @@ export class RoomService {
     const skip = (page - 1) * limit;
 
     const pipeline: any[] = [
+      // 1. User hiện tại đang ở trong phòng
       {
         $match: {
           userId: new Types.ObjectId(userId),
           __isDeleted: false,
         },
       },
+      // 2. Join thông tin chatroom
       {
         $lookup: {
           from: 'chatrooms',
@@ -102,17 +114,8 @@ export class RoomService {
         },
       },
       { $unwind: '$room' },
-    ];
 
-    if (search) {
-      pipeline.push({
-        $match: {
-          'room.name': { $regex: search, $options: 'i' },
-        },
-      });
-    }
-
-    pipeline.push(
+      // 3. Join tin nhắn gần nhất
       {
         $lookup: {
           from: 'messages',
@@ -127,6 +130,86 @@ export class RoomService {
           preserveNullAndEmptyArrays: true,
         },
       },
+
+      // 4. Join danh sách thành viên
+      {
+        $lookup: {
+          from: 'chatroommembers',
+          let: { rId: '$roomId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$roomId', '$$rId'] },
+                    { $eq: ['$__isDeleted', false] },
+                  ],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'userId',
+                foreignField: '_id',
+                pipeline: [
+                  {
+                    $project: {
+                      _id: 1,
+                      name: 1,
+                    },
+                  },
+                ],
+                as: 'user',
+              },
+            },
+            {
+              $unwind: {
+                path: '$user',
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+          ],
+          as: 'members',
+        },
+      },
+
+      // 5. ĐIỀU KIỆN LỌC PHÒNG RỖNG
+      {
+        $match: {
+          $or: [
+            // Điều kiện 1: Đã có tin nhắn
+            { 'lastMessage._id': { $exists: true } },
+
+            // Điều kiện 2: Hoặc là phòng nhóm (từ 3 thành viên trở lên)
+            { $expr: { $gt: [{ $size: '$members' }, 2] } },
+          ],
+        },
+      },
+    ];
+
+    // 6. Tìm kiếm
+    if (search && search.trim()) {
+      const searchRegex = { $regex: search.trim(), $options: 'i' };
+      pipeline.push({
+        $match: {
+          $or: [
+            { 'room.name': searchRegex },
+            {
+              members: {
+                $elemMatch: {
+                  userId: { $ne: new Types.ObjectId(userId) },
+                  'user.name': searchRegex,
+                },
+              },
+            },
+          ],
+        },
+      });
+    }
+
+    // 7. Sắp xếp và phân trang
+    pipeline.push(
       {
         $sort: {
           'lastMessage.createdAt': -1,
@@ -138,7 +221,14 @@ export class RoomService {
       {
         $replaceRoot: {
           newRoot: {
-            $mergeObjects: ['$room', { historyDeletedAt: '$historyDeletedAt' }],
+            $mergeObjects: [
+              '$room',
+              {
+                historyDeletedAt: '$historyDeletedAt',
+                lastMessage: '$lastMessage',
+                members: '$members',
+              },
+            ],
           },
         },
       },

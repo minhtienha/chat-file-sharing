@@ -9,6 +9,8 @@ import {
   ChatRoomSchema,
   Message,
   MessageSchema,
+  User,
+  UserSchema,
 } from '@sharing/models';
 import { ChatGatewayModule } from '../chat-gateway/chat-gateway.module';
 
@@ -26,6 +28,10 @@ import { ChatGatewayModule } from '../chat-gateway/chat-gateway.module';
       {
         name: ChatRoomMember.name,
         schema: ChatRoomMemberSchema,
+      },
+      {
+        name: User.name,
+        schema: UserSchema,
       },
     ]),
     ChatGatewayModule,

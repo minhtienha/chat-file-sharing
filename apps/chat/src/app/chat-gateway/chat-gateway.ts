@@ -32,11 +32,11 @@ export class ChatGateway
 
   @SubscribeMessage('joinRoom')
   handleJoinRoom(
-    @MessageBody() roomId: string,
+    @MessageBody() data: { roomId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    client.join(roomId);
-    console.log(`📥 Client ${client.id} đã join vào phòng: ${roomId}`);
+    client.join(data.roomId);
+    console.log(`📥 Client ${client.id} đã join vào phòng: ${data.roomId}`);
   }
 
   @SubscribeMessage('leaveRoom')
@@ -50,6 +50,29 @@ export class ChatGateway
 
   emitNewMessage(roomId: string, message: any) {
     this.server.to(roomId).emit('newMessage', message);
+  }
+
+  @SubscribeMessage('typing')
+  handleTyping(
+    @MessageBody() data: { roomId: string; userName: string; userId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.to(data.roomId).emit('userTyping', {
+      userId: data.userId,
+      userName: data.userName,
+      roomId: data.roomId,
+    });
+  }
+
+  @SubscribeMessage('stopTyping')
+  handleStopTyping(
+    @MessageBody() data: { roomId: string; userId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.to(data.roomId).emit('userStoppedTyping', {
+      userId: data.userId,
+      roomId: data.roomId,
+    });
   }
 
   // @SubscribeMessage('newMessage')
