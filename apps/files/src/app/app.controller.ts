@@ -12,6 +12,7 @@ import {
   UseGuards,
   Body,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { AppService } from './app.service';
@@ -46,8 +47,12 @@ export class AppController {
 
   @Get('my-files')
   @UseGuards(JwtAuthGuard)
-  async getMyFiles(@CurrentUser() currentUser: UserDocument) {
-    return await this.appService.getMyFiles(currentUser._id);
+  async getMyFiles(
+    @CurrentUser() currentUser: UserDocument,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '20'
+  ) {
+    return await this.appService.getMyFiles(currentUser._id, parseInt(page), parseInt(limit));
   }
 
   @Patch('shared/:token')

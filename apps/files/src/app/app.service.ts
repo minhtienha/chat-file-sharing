@@ -81,8 +81,10 @@ export class AppService {
     };
   }
 
-  async getMyFiles(ownerId: string | Types.ObjectId) {
-    return await this.fileUploadModel.aggregate([
+  async getMyFiles(ownerId: string | Types.ObjectId, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+
+    const pipeline: any[] = [
       { $match: { ownerId: new Types.ObjectId(ownerId) } },
       {
         $lookup: {
@@ -111,7 +113,28 @@ export class AppService {
       },
       { $project: { activeShares: 0 } },
       { $sort: { createdAt: -1 } },
+    ];
+
+    const [result] = await this.fileUploadModel.aggregate([
+      ...pipeline,
+      {
+        $facet: {
+          data: [{ $skip: skip }, { $limit: Number(limit) }],
+          totalCount: [{ $count: 'count' }],
+        },
+      },
     ]);
+
+    const total = result.totalCount[0]?.count || 0;
+    return {
+      data: result.data,
+      meta: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async deleteFile(fileId: string, currentUserId: string | Types.ObjectId) {

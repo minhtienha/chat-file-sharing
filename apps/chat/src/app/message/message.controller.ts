@@ -42,6 +42,16 @@ export class MessageController {
     return this.messageService.findMessages(roomId, userId, query);
   }
 
+  // MỚI: Lấy danh sách file đính kèm của phòng
+  @Get(':roomId/attachments')
+  async getRoomAttachments(
+    @CurrentUser() user: UserDocument,
+    @Param('roomId') roomId: string,
+  ) {
+    const userId = user._id.toString();
+    return this.messageService.getRoomAttachments(roomId, userId);
+  }
+
   @Patch(':roomId/read')
   async markAsRead(
     @Param('roomId') roomId: string,

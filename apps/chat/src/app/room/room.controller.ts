@@ -50,16 +50,36 @@ export class RoomController {
   updateRoom(
     @Param('roomId') roomId: string,
     @CurrentUser() user: UserDocument,
-    @Body() name: string,
+    @Body('name') name: string,
   ) {
     return this.roomService.updateRoom(roomId, user._id.toString(), name);
   }
 
-  @Delete(':roomId')
-  deleteRoom(
+  // Rời khỏi phòng (hoặc xóa lịch sử nhóm 1-1)
+  @Delete(':roomId/leave')
+  leaveRoom(
     @Param('roomId') roomId: string,
     @CurrentUser() user: UserDocument,
   ) {
     return this.roomService.deleteRoom(roomId, user._id.toString());
+  }
+  
+  // Chủ phòng xóa toàn bộ nhóm
+  @Delete(':roomId/entire')
+  deleteRoomEntirely(
+    @Param('roomId') roomId: string,
+    @CurrentUser() user: UserDocument,
+  ) {
+    return this.roomService.deleteRoomEntirely(roomId, user._id.toString());
+  }
+
+  // MỚI: Thêm thành viên vào phòng
+  @Post(':roomId/members')
+  addMembers(
+    @Param('roomId') roomId: string,
+    @CurrentUser() user: UserDocument,
+    @Body('memberIds') memberIds: string[],
+  ) {
+    return this.roomService.addMembers(roomId, memberIds || [], user._id.toString());
   }
 }

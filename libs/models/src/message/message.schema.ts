@@ -4,7 +4,7 @@ import { DefaultSchema } from '../common';
 
 export enum MessageType {
   TEXT = 'TEXT',
-  //   FILE = 'file',
+  FILE = 'FILE',
 }
 
 export type MessageDocument = Message & Document;
@@ -38,6 +38,24 @@ export class Message extends DefaultSchema {
     enum: MessageType,
   })
   type!: MessageType;
+
+  @Prop({
+    type: [
+      {
+        gridfsFileId: { type: String, required: true },
+        name: { type: String, required: true },
+        contentType: { type: String },
+        size: { type: Number },
+      },
+    ],
+    default: [],
+  })
+  attachments?: {
+    gridfsFileId: string;
+    name: string;
+    contentType?: string;
+    size?: number;
+  }[];
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

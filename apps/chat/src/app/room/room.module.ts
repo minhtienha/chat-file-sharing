@@ -9,10 +9,15 @@ import {
   ChatRoomSchema,
   Message,
   MessageSchema,
+  User,
+  UserSchema,
 } from '@sharing/models';
+
+import { ChatGatewayModule } from '../chat-gateway/chat-gateway.module';
 
 @Module({
   imports: [
+    ChatGatewayModule,
     MongooseModule.forFeature([
       {
         name: Message.name,
@@ -25,6 +30,10 @@ import {
       {
         name: ChatRoomMember.name,
         schema: ChatRoomMemberSchema,
+      },
+      {
+        name: User.name,
+        schema: UserSchema,
       },
     ]),
   ],

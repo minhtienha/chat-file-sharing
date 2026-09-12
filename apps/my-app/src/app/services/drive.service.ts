@@ -11,13 +11,19 @@ const getAuthHeaders = (isJson = false) => {
   };
 };
 
-export const getMyFiles = async (): Promise<DriveFile[]> => {
-  const res = await fetch(`${FILE_API_URL}/my-files`, {
+export const getMyFiles = async (page = 1, limit = 20): Promise<{ data: DriveFile[], meta: { page: number; limit: number; total: number; totalPages: number } }> => {
+  const res = await fetch(`${FILE_API_URL}/my-files?page=${page}&limit=${limit}`, {
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải danh sách file');
-  const data = await res.json();
-  return Array.isArray(data) ? data : data.data || [];
+  const result = await res.json();
+  
+  // Backwards compatibility just in case API hasn't updated or returns old format
+  if (Array.isArray(result)) {
+    return { data: result, meta: { page: 1, limit: 20, total: result.length, totalPages: 1 } };
+  }
+  
+  return result;
 };
 
 export const uploadFiles = async (

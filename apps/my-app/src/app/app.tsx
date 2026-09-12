@@ -13,6 +13,7 @@ import RegisterPage from './pages/RegisterPage';
 import { AuthInit } from './components/auth/AuthInit';
 import { useBearerTokenStore } from './stores/auth.store';
 import DrivePage from './pages/DrivePage';
+import ProfilePage from './pages/ProfilePage';
 
 const RouteGuard = ({ isProtected }: { isProtected?: boolean }) => {
   const token = useBearerTokenStore((state) => state.accessToken);
@@ -36,8 +37,9 @@ const router = createBrowserRouter(
       <Route element={<RouteGuard isProtected />}>
         <Route element={<MainLayout />}>
           <Route path="/" element={<ChatPage />} />
-          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/chat" element={<Navigate to="/" replace />} />
           <Route path="/drive" element={<DrivePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Route>
 
@@ -46,6 +48,13 @@ const router = createBrowserRouter(
   ),
 );
 
-const App = () => <RouterProvider router={router} />;
+const App = () => (
+  <RouterProvider
+    router={router}
+    future={{
+      v7_startTransition: true,
+    }}
+  />
+);
 
 export default App;

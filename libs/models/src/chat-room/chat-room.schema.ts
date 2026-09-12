@@ -11,6 +11,9 @@ export class ChatRoom extends DefaultSchema {
   @Prop()
   name?: string;
 
+  @Prop({ default: false })
+  isGroup?: boolean;
+
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
   })

@@ -46,4 +46,15 @@ export class AppService {
       .exec();
     return users;
   }
+
+  async updateProfile(userId: string, data: { name?: string; avatar?: string; password?: string }) {
+    const updateData: any = {};
+    if (data.name) updateData.name = data.name;
+    if (data.avatar) updateData.avatar = data.avatar;
+    if (data.password) {
+      updateData.passwordHash = await this.hashPassword(data.password);
+    }
+    
+    return await this.usersService.findByIdAndUpdate(userId, updateData, { new: true }).select('-passwordHash').exec();
+  }
 }

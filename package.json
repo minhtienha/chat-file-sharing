@@ -61,7 +61,7 @@
     "tslib": "^2.3.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.58.0",
-    "vite": "^8.0.0",
+    "vite": "8.2.0",
     "webpack": "^5.101.3",
     "webpack-cli": "^7.0.0",
     "webpack-dev-server": "^5.2.1",
@@ -82,8 +82,9 @@
     "@nestjs/platform-express": "^11.2.3",
     "@nestjs/platform-socket.io": "^11.2.3",
     "@nestjs/websockets": "^11.2.3",
-    "@tailwindcss/vite": "^4.3.3",
+    "@tailwindcss/vite": "4.3.3",
     "cookie-parser": "^1.4.7",
+    "emoji-picker-react": "^4.20.9",
     "multer": "^2.2.0",
     "multer-gridfs-storage": "^6.1.0",
     "react": "^19.0.0",
@@ -99,6 +100,14 @@
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "overrides": {
+    "picomatch": "4.0.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "picomatch": "4.0.5"
     }
   }
 }

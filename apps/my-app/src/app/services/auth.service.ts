@@ -60,18 +60,25 @@ export const refreshTokenApi = async (): Promise<string | null> => {
 
 export const getMe = async () => {
   const token = useBearerTokenStore.getState().accessToken;
-
   const res = await fetch(`${USER_API_URL}/me`, {
     method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+  return res.json();
+};
+
+export const updateProfile = async (payload: { name?: string; password?: string; avatar?: string }) => {
+  const token = useBearerTokenStore.getState().accessToken;
+  const res = await fetch(`${USER_API_URL}/profile`, {
+    method: 'PATCH',
     headers: {
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
+    body: JSON.stringify(payload),
   });
-
-  if (!res.ok) {
-    throw new Error(`HTTP error: ${res.status}`);
-  }
-
+  if (!res.ok) throw new Error('Cập nhật thông tin thất bại');
   return res.json();
 };
 
