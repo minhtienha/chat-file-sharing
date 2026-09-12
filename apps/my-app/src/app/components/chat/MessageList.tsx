@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { IoMdSearch } from 'react-icons/io';
 import { FiMoreVertical, FiCheck, FiTrash2 } from 'react-icons/fi';
 import Spinner from '../common/Spinner';
+import UserAvatar from '../common/UserAvatar';
 import { formatMessageTime } from '../../utils/formatMessageTime';
 import { useBearerTokenStore } from '../../stores/auth.store';
 import {
@@ -17,6 +18,7 @@ import {
   findDirectRoomWithUser,
   getRoomDisplayName,
   getRoomAvatar,
+  getMemberUserId,
 } from '../../utils/chatNameHelper';
 import { getMessagePreview, getSenderId } from '../../utils/messageContent';
 import { getSocket } from '../../services/socket';
@@ -25,7 +27,6 @@ import { toast } from 'react-toastify';
 interface MessageListProps {
   activeRoom: ChatRoom | null;
   setActiveRoom: (room: ChatRoom) => void;
-  refreshTrigger: number;
 }
 
 const unwrapList = <T,>(data: T[] | { data?: T[] }): T[] => {
@@ -36,7 +37,6 @@ const unwrapList = <T,>(data: T[] | { data?: T[] }): T[] => {
 const MessageList = ({
   activeRoom,
   setActiveRoom,
-  refreshTrigger,
 }: MessageListProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
@@ -108,7 +108,7 @@ const MessageList = ({
     // Debounce tìm kiếm 300ms
     const timer = setTimeout(executeSearch, 300);
     return () => clearTimeout(timer);
-  }, [accessToken, searchQuery, refreshTrigger, currentUser?._id]);
+  }, [accessToken, searchQuery, currentUser?._id]);
 
   // Lắng nghe socket: Tin nhắn mới, Đánh dấu đã đọc và Xóa phòng Realtime
   useEffect(() => {
@@ -157,7 +157,7 @@ const MessageList = ({
 
           const tempRoom: ChatRoom = {
             _id: String(newMsg.roomId),
-            name: (senderObj as any)?.name || '',
+            name: '',
             isGroup: false,
             members: senderObj ? [{ userId: senderObj, user: senderObj } as any] : [],
             lastMessage: newMsg,
@@ -210,20 +210,29 @@ const MessageList = ({
             ? 0
             : (targetRoom.unreadCount || 0) + 1;
 
-        // Nếu targetRoom.members đang rỗng hoặc chưa có user/name thì bổ sung từ sender
-        let updatedMembers = targetRoom.members || [];
+        // Cập nhật thông tin sender vào members mà không làm mất các thành viên khác
+        let updatedMembers = targetRoom.members ? [...targetRoom.members] : [];
         const senderObj =
           typeof newMsg.sender === 'object' && newMsg.sender
             ? newMsg.sender
             : typeof newMsg.senderId === 'object' && newMsg.senderId
             ? newMsg.senderId
             : null;
-        if (
-          senderObj &&
-          (!updatedMembers.length ||
-            !updatedMembers.some((m: any) => m.userId?.name || m.user?.name || m.name))
-        ) {
-          updatedMembers = [{ userId: senderObj, user: senderObj } as any];
+
+        if (senderObj && (senderObj as any)._id) {
+          const senderIdStr = String((senderObj as any)._id);
+          const existingMemberIdx = updatedMembers.findIndex(
+            (m: any) => getMemberUserId(m) === senderIdStr,
+          );
+          if (existingMemberIdx !== -1) {
+            updatedMembers[existingMemberIdx] = {
+              ...updatedMembers[existingMemberIdx],
+              user: senderObj,
+              userId: senderObj,
+            };
+          } else if (updatedMembers.length === 0) {
+            updatedMembers = [{ userId: senderObj, user: senderObj } as any];
+          }
         }
 
         const updatedRoom: ChatRoom = {
@@ -390,7 +399,7 @@ const MessageList = ({
 
       // Nếu chưa có, tạo mới phòng chat 1-1
       const created = (await createChatRoom({
-        name: targetUser.name || 'Cuộc trò chuyện',
+        name: 'Direct Chat',
         memberIds: [targetUser._id],
       })) as ChatRoom | { data: ChatRoom };
       const newRoom: ChatRoom =
@@ -444,26 +453,26 @@ const MessageList = ({
   }, [userResults, existingDirectUserIds]);
 
   return (
-    <div className="w-full h-full bg-white flex flex-col p-4 lg:p-5 select-none min-h-0">
-      <div className="flex items-center justify-between mb-4 shrink-0">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+    <div className="w-full h-full bg-white flex flex-col p-4 select-none min-h-0">
+      <div className="flex items-center justify-between mb-3.5 shrink-0 px-1">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-bold text-slate-800 tracking-tight">
             Tin nhắn
           </h2>
-          <p className="text-xs font-medium text-slate-400 mt-0.5">
-            {rooms.length} cuộc trò chuyện
-          </p>
+          <span className="px-2 py-0.5 text-[11px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100/60 rounded-full">
+            {rooms.length}
+          </span>
         </div>
       </div>
 
-      <div className="relative flex items-center mb-4 shrink-0">
-        <IoMdSearch className="absolute left-3 text-slate-400 text-lg pointer-events-none" />
+      <div className="relative flex items-center mb-3.5 shrink-0">
+        <IoMdSearch className="absolute left-3.5 text-slate-400 text-lg pointer-events-none" />
         <input
           type="search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Tìm phòng hoặc bạn bè..."
-          className="w-full pl-9 pr-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-400 focus:bg-white transition"
+          className="w-full pl-10 pr-4 py-2 text-xs text-slate-800 placeholder:text-slate-400 bg-slate-50 border border-slate-200/70 rounded-2xl focus:outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all"
         />
       </div>
 
@@ -491,9 +500,7 @@ const MessageList = ({
                         onClick={() => handleSelectUser(user)}
                         className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 cursor-pointer transition w-full text-left"
                       >
-                        <div className="w-8 h-8 rounded-full bg-teal-500 text-white flex items-center justify-center text-xs font-bold shrink-0">
-                          {user.name.charAt(0).toUpperCase()}
-                        </div>
+                        <UserAvatar name={user.name} avatar={user.avatar} size="sm" />
                         <div className="flex flex-col min-w-0">
                           <span className="text-xs font-semibold text-slate-800 truncate">{user.name}</span>
                           <span className="text-[10px] text-slate-400 truncate">{user.email}</span>
@@ -538,17 +545,12 @@ const MessageList = ({
                         }`}
                       >
                         <div className="relative shrink-0">
-                          {roomAvatar ? (
-                            <img
-                              src={roomAvatar}
-                              alt={roomDisplayName}
-                              className="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center shadow-sm">
-                              {roomDisplayName.charAt(0).toUpperCase()}
-                            </div>
-                          )}
+                          <UserAvatar
+                            name={roomDisplayName}
+                            avatar={roomAvatar}
+                            size="md"
+                            className="w-10 h-10"
+                          />
                           {hasUnread && (
                             <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-indigo-600 border-2 border-white rounded-full" />
                           )}
@@ -637,7 +639,7 @@ const MessageList = ({
 
                             {/* Badge số tin nhắn chưa đọc */}
                             {hasUnread && (
-                              <span className="px-1.5 py-0.5 min-w-5 h-5 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0 shadow-xs">
+                              <span className="px-2 py-0.5 min-w-5 h-5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200">
                                 {item.unreadCount! > 99 ? '99+' : item.unreadCount}
                               </span>
                             )}

@@ -119,14 +119,14 @@ const ChatInput = ({ onSendMessage, disabled = false, onFocus }: ChatInputProps)
             {selectedFiles.map((file, index) => (
               <div
                 key={`${file.name}-${index}`}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg text-xs text-indigo-700 shadow-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50/80 border border-indigo-100/80 rounded-xl text-xs text-indigo-700 shadow-2xs"
               >
                 <FiFile className="text-indigo-500 shrink-0" />
-                <span className="max-w-[140px] truncate font-medium">{file.name}</span>
+                <span className="max-w-[140px] truncate font-semibold">{file.name}</span>
                 <button
                   type="button"
                   onClick={() => handleRemoveFile(index)}
-                  className="text-indigo-400 hover:text-rose-500 ml-1 transition"
+                  className="text-indigo-400 hover:text-rose-500 ml-1 transition cursor-pointer"
                   aria-label="Xóa file"
                 >
                   <FiX className="text-sm" />
@@ -143,7 +143,7 @@ const ChatInput = ({ onSendMessage, disabled = false, onFocus }: ChatInputProps)
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={disabled}
-              className="p-2 rounded-lg hover:text-slate-600 hover:bg-slate-100 transition"
+              className="p-2 rounded-xl hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
               title="Đính kèm tệp tin"
             >
               <FiPaperclip className="text-xl rotate-45" />
@@ -153,7 +153,7 @@ const ChatInput = ({ onSendMessage, disabled = false, onFocus }: ChatInputProps)
               type="button"
               onClick={() => setShowEmojiPicker((prev) => !prev)}
               disabled={disabled}
-              className={`p-2 rounded-lg hover:text-slate-600 hover:bg-slate-100 transition ${
+              className={`p-2 rounded-xl hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer ${
                 showEmojiPicker ? 'text-indigo-600 bg-indigo-50' : ''
               }`}
               title="Biểu tượng cảm xúc"
@@ -162,7 +162,7 @@ const ChatInput = ({ onSendMessage, disabled = false, onFocus }: ChatInputProps)
             </button>
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 font-medium bg-slate-50 px-3 py-1.5 rounded-lg pointer-events-none">
+          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 font-medium bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 pointer-events-none">
             <BsCloudUpload className="text-sm" />
             <span>Kéo thả tệp vào đây</span>
           </div>
@@ -170,7 +170,7 @@ const ChatInput = ({ onSendMessage, disabled = false, onFocus }: ChatInputProps)
       </div>
 
       {/* Box nhập liệu */}
-      <div className="flex items-end gap-2 bg-slate-50 rounded-2xl border border-slate-200 p-1 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all">
+      <div className="flex items-end gap-2 bg-slate-50/80 rounded-2xl border border-slate-200/80 p-1.5 focus-within:border-indigo-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all">
         <textarea
           ref={textareaRef}
           rows={1}
@@ -180,21 +180,21 @@ const ChatInput = ({ onSendMessage, disabled = false, onFocus }: ChatInputProps)
           onKeyDown={handleKeyDown}
           placeholder="Nhập tin nhắn..."
           disabled={disabled}
-          className="flex-1 max-h-32 min-h-[40px] py-2.5 px-3 text-sm text-slate-800 placeholder:text-slate-400 bg-transparent border-none outline-none resize-none focus:ring-0 leading-relaxed"
+          className="flex-1 max-h-32 min-h-[40px] py-2 px-3 text-sm text-slate-800 placeholder:text-slate-400 bg-transparent border-none outline-none resize-none focus:ring-0 leading-relaxed"
         />
 
         <button
           type="button"
           onClick={handleSend}
           disabled={!canSend || disabled}
-          className={`w-10 h-10 mb-0.5 mr-0.5 rounded-full flex items-center justify-center transition-all shrink-0 ${
+          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 cursor-pointer ${
             canSend && !disabled
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 hover:bg-indigo-700 hover:scale-105'
-              : 'bg-slate-200 text-slate-400 opacity-80 cursor-not-allowed'
+              ? 'bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white shadow-md shadow-indigo-200 hover:from-indigo-500 hover:to-indigo-600 hover:scale-105 active:scale-95'
+              : 'bg-slate-200 text-slate-400 opacity-60 cursor-not-allowed'
           }`}
           title="Gửi (Enter)"
         >
-          <FiSend className="text-base -ml-0.5" />
+          <FiSend className="text-base" />
         </button>
       </div>
     </div>

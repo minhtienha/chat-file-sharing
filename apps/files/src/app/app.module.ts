@@ -14,6 +14,8 @@ import {
   GridFSChunkSchema,
   GridFSFile,
   GridFSFileSchema,
+  Message,
+  MessageSchema,
 } from '@sharing/models';
 import { FileShareLinkService } from './file-share-link.service';
 
@@ -28,6 +30,7 @@ import { FileShareLinkService } from './file-share-link.service';
       { name: GridFSChunk.name, schema: GridFSChunkSchema },
       { name: FileUploadModel.name, schema: FileUploadSchema },
       { name: FileShareLinkModel.name, schema: FileShareLinkSchema },
+      { name: Message.name, schema: MessageSchema },
     ]),
   ],
   controllers: [AppController],

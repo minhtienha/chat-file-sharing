@@ -54,9 +54,32 @@ export const getMemberAvatar = (member: any): string | null => {
   );
 };
 
-export const isGroupRoom = (room: ChatRoom): boolean => {
-  if (room.isGroup) return true;
-  return (room.members?.length ?? 0) > 2;
+export const isGroupRoom = (room: ChatRoom | null | undefined): boolean => {
+  if (!room) return false;
+  if (room.isGroup === true) return true;
+  if ((room.members?.length ?? 0) > 2) return true;
+
+  const roomName = room.name?.trim();
+  if (
+    roomName &&
+    roomName !== 'Direct Chat' &&
+    roomName !== 'Cuộc trò chuyện' &&
+    roomName !== 'Người dùng'
+  ) {
+    if (room.members && room.members.length > 0) {
+      const isMemberName = room.members.some((m) => {
+        const mName = getMemberName(m)?.trim();
+        return mName && mName.toLowerCase() === roomName.toLowerCase();
+      });
+      if (!isMemberName) {
+        return true;
+      }
+    } else if (room.isGroup !== false) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 export const getRoomDisplayName = (
@@ -67,18 +90,42 @@ export const getRoomDisplayName = (
   if (!room) return '';
 
   const members = room.members || [];
+  const roomName = room.name?.trim() || '';
 
-  // Xác định xem có phải là Direct Chat (1-1) hay không:
-  const isDirect =
-    room.isGroup === false ||
-    members.length === 2 ||
-    room.name === 'Direct Chat' ||
-    !room.name;
+  // 1. NHÓM CHAT / PHÒNG CÓ TÊN RIÊNG:
+  if (isGroupRoom(room)) {
+    // Nếu có tên phòng đặt riêng (ví dụ "học bài") -> Luôn luôn hiển thị tên phòng này
+    if (
+      roomName &&
+      roomName !== 'Direct Chat' &&
+      roomName !== 'Cuộc trò chuyện' &&
+      roomName !== 'Người dùng'
+    ) {
+      return roomName;
+    }
 
-  // 1. Tìm tên đối phương trong mảng members
-  if (isDirect && currentUserId && members.length > 0) {
+    // Nếu là nhóm nhưng không đặt tên riêng: Liệt kê tên các thành viên khác
+    if (members.length > 0) {
+      const otherNames = members
+        .filter((m) => !currentUserId || getMemberUserId(m) !== String(currentUserId))
+        .map((m) => getMemberName(m))
+        .filter(Boolean);
+
+      if (otherNames.length > 0) {
+        return otherNames.slice(0, 3).join(', ') + (otherNames.length > 3 ? '...' : '');
+      }
+    }
+
+    return 'Nhóm trò chuyện';
+  }
+
+  // 2. DIRECT CHAT (1-1):
+  // Luôn luôn hiển thị tên của ĐỐI PHƯƠNG (người chat cùng, khác với currentUserId)
+
+  // 2.1. Tìm đối phương trong mảng members
+  if (currentUserId && members.length > 0) {
     const otherMember = members.find(
-      (member) => getMemberUserId(member) !== String(currentUserId),
+      (m) => getMemberUserId(m) !== String(currentUserId),
     );
     if (otherMember) {
       const name = getMemberName(otherMember);
@@ -86,37 +133,45 @@ export const getRoomDisplayName = (
     }
   }
 
-  // 2. FALLBACK 1: Kiểm tra room.lastMessage (tin nhắn gần nhất của phòng)
+  // 2.2. Kiểm tra nếu roomName không phải tên của currentUser và không phải generic
+  if (
+    roomName &&
+    roomName !== 'Direct Chat' &&
+    roomName !== 'Cuộc trò chuyện' &&
+    roomName !== 'Người dùng'
+  ) {
+    const currentUserMember = members.find(
+      (m) => currentUserId && getMemberUserId(m) === String(currentUserId),
+    );
+    const myName = currentUserMember ? getMemberName(currentUserMember) : '';
+    if (!myName || roomName.toLowerCase() !== myName.toLowerCase()) {
+      return roomName;
+    }
+  }
+
+  // 2.3. Fallback: Nếu members chưa kịp tải, tìm tin nhắn của đối phương (lastMessage hoặc fallbackMessages)
   if (room.lastMessage) {
     const lastMsgSender = room.lastMessage.sender || room.lastMessage.senderId;
     const lastMsgSenderId = getMemberUserId(lastMsgSender);
-    const isFromOther = !currentUserId || (lastMsgSenderId && String(lastMsgSenderId) !== String(currentUserId));
-    if (isFromOther) {
+    if (currentUserId && lastMsgSenderId && String(lastMsgSenderId) !== String(currentUserId)) {
       const name = getMemberName(lastMsgSender);
       if (name) return name;
     }
   }
 
-  // 3. FALLBACK 2: Kiểm tra danh sách tin nhắn fallback (fallbackMessages trong ChatBox)
   if (fallbackMessages && Array.isArray(fallbackMessages) && fallbackMessages.length > 0) {
     for (let i = fallbackMessages.length - 1; i >= 0; i--) {
       const msg = fallbackMessages[i];
       const sender = msg.sender || msg.senderId;
       const senderId = getMemberUserId(sender);
-      if (currentUserId && senderId && String(senderId) === String(currentUserId)) {
-        continue;
+      if (currentUserId && senderId && String(senderId) !== String(currentUserId)) {
+        const name = getMemberName(sender);
+        if (name) return name;
       }
-      const name = getMemberName(sender);
-      if (name) return name;
     }
   }
 
-  // 4. Nếu phòng có đặt tên cụ thể (và không phải chuỗi mặc định 'Direct Chat')
-  if (room.name && room.name.trim() && room.name !== 'Direct Chat' && room.name !== 'Người dùng') {
-    return room.name;
-  }
-
-  // 5. Duyệt bất kỳ thành viên nào có tên
+  // 2.4. Duyệt bất kỳ thành viên nào trong members khác currentUserId
   if (members.length > 0) {
     for (const m of members) {
       if (currentUserId && getMemberUserId(m) === String(currentUserId)) continue;
@@ -130,9 +185,8 @@ export const getRoomDisplayName = (
 
 /**
  * Lấy avatar của phòng chat:
- * 1. Từ đối phương trong members.
- * 2. Fallback: từ room.lastMessage.sender.
- * 3. Fallback: từ fallbackMessages.
+ * 1. Nhóm chat: Không lấy avatar của người gửi tin nhắn, trả về null (để render icon nhóm/chữ cái đầu)
+ * 2. Direct chat 1-1: Luôn lấy avatar của đối phương
  */
 export const getRoomAvatar = (
   room: ChatRoom | null | undefined,
@@ -141,16 +195,18 @@ export const getRoomAvatar = (
 ): string | null => {
   if (!room) return null;
 
-  const members = room.members || [];
-  const isDirect =
-    room.isGroup === false ||
-    members.length === 2 ||
-    room.name === 'Direct Chat' ||
-    !room.name;
+  // 1. NHÓM CHAT:
+  if (isGroupRoom(room)) {
+    return (room as any).avatar || null;
+  }
 
-  if (isDirect && currentUserId && members.length > 0) {
+  // 2. DIRECT CHAT (1-1): Luôn lấy avatar của ĐỐI PHƯƠNG
+  const members = room.members || [];
+
+  // 2.1. Lấy từ otherMember trong members
+  if (currentUserId && members.length > 0) {
     const otherMember = members.find(
-      (member) => getMemberUserId(member) !== String(currentUserId),
+      (m) => getMemberUserId(m) !== String(currentUserId),
     );
     if (otherMember) {
       const avatar = getMemberAvatar(otherMember);
@@ -158,17 +214,17 @@ export const getRoomAvatar = (
     }
   }
 
-  // Fallback sang lastMessage
+  // 2.2. Fallback sang lastMessage nếu từ đối phương
   if (room.lastMessage) {
     const lastMsgSender = room.lastMessage.sender || room.lastMessage.senderId;
     const lastMsgSenderId = getMemberUserId(lastMsgSender);
-    if (!currentUserId || (lastMsgSenderId && String(lastMsgSenderId) !== String(currentUserId))) {
+    if (currentUserId && lastMsgSenderId && String(lastMsgSenderId) !== String(currentUserId)) {
       const avatar = getMemberAvatar(lastMsgSender);
       if (avatar) return avatar;
     }
   }
 
-  // Fallback sang fallbackMessages
+  // 2.3. Fallback sang fallbackMessages nếu từ đối phương
   if (fallbackMessages && Array.isArray(fallbackMessages) && fallbackMessages.length > 0) {
     for (let i = fallbackMessages.length - 1; i >= 0; i--) {
       const msg = fallbackMessages[i];

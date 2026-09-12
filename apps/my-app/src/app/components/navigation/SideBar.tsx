@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { BsLightningChargeFill, BsThreeDots } from 'react-icons/bs';
-import { FiChevronLeft, FiLogOut, FiMenu } from 'react-icons/fi';
+import { FiChevronLeft, FiLogOut, FiMenu, FiUser } from 'react-icons/fi';
 import { useBearerTokenStore } from '../../stores/auth.store';
 import { getSocket } from '../../services/socket';
 import { logoutApi } from '../../services/auth.service';
 import { getChatRooms } from '../../services/chatRoom.service';
+import { getPreviewUrl } from '../../services/drive.service';
 import { WORKSPACE_NAV_ITEMS } from './navConfig';
 
 interface SidebarProps {
@@ -86,32 +87,42 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
 
   return (
     <aside
-      className={`hidden lg:flex h-full bg-white border-r border-slate-200 flex-col justify-between transition-all duration-300 ease-in-out shrink-0 ${
-        isOpen ? 'w-64 p-4' : 'w-16 p-2.5 items-center'
+      className={`hidden lg:flex h-full bg-white border-r border-slate-200/70 flex-col justify-between transition-all duration-300 ease-in-out shrink-0 select-none ${
+        isOpen ? 'w-64 p-4' : 'w-20 p-3 items-center'
       }`}
     >
       <div className="flex flex-col gap-6 w-full">
+        {/* Logo & Toggle */}
         <div className={`flex items-center ${isOpen ? 'justify-between px-1' : 'justify-center'}`}>
           {isOpen && (
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white shrink-0">
+              <div className="w-9 h-9 bg-gradient-to-tr from-indigo-600 to-indigo-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-200 shrink-0">
                 <BsLightningChargeFill className="text-lg" />
               </div>
-              <span className="text-xl font-bold text-slate-800">Relay</span>
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-slate-800 tracking-tight leading-none">Relay</span>
+                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Workspace</span>
+              </div>
             </div>
           )}
 
           <button
             type="button"
             onClick={onToggle}
-            className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100/80 transition cursor-pointer"
+            title={isOpen ? 'Thu gọn thanh bên' : 'Mở rộng thanh bên'}
           >
             {isOpen ? <FiChevronLeft className="text-lg" /> : <FiMenu className="text-lg" />}
           </button>
         </div>
 
-        <div className="flex flex-col gap-1 w-full">
-          {isOpen && <p className="px-3 text-[11px] font-bold text-slate-400 uppercase mb-1">Workspace</p>}
+        {/* Danh sách điều hướng */}
+        <div className="flex flex-col gap-1.5 w-full">
+          {isOpen && (
+            <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+              Menu chính
+            </p>
+          )}
 
           {WORKSPACE_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -121,12 +132,12 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
                 to={item.to}
                 end={item.to === '/'}
                 className={({ isActive }) =>
-                  `flex items-center w-full rounded-xl transition relative ${
-                    isOpen ? 'justify-between px-3.5 py-2.5' : 'justify-center p-2.5'
+                  `flex items-center w-full rounded-xl transition-all duration-150 relative ${
+                    isOpen ? 'justify-between px-3.5 py-2.5' : 'justify-center p-3'
                   } ${
                     isActive
-                      ? 'bg-indigo-50 text-indigo-600 font-semibold'
-                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700 font-medium'
+                      ? 'bg-indigo-50 text-indigo-600 font-semibold shadow-xs'
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800 font-medium'
                   }`
                 }
               >
@@ -136,8 +147,8 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
                 </div>
                 {item.id === 'chat' && unreadRoomsCount > 0 && (
                   <span
-                    className={`flex items-center justify-center font-bold text-white bg-indigo-600 rounded-full ${
-                      isOpen ? 'min-w-5 h-5 px-1.5 text-[11px]' : 'absolute -top-1 -right-1 w-4 h-4 text-[9px]'
+                    className={`flex items-center justify-center font-bold text-white bg-indigo-600 rounded-full shadow-xs ${
+                      isOpen ? 'min-w-5 h-5 px-1.5 text-[10px]' : 'absolute -top-1 -right-1 w-4 h-4 text-[9px]'
                     }`}
                   >
                     {unreadRoomsCount > 99 ? '99+' : unreadRoomsCount}
@@ -149,21 +160,33 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
         </div>
       </div>
 
+      {/* Footer User Profile & Popover Menu */}
       <div className="relative w-full" ref={menuRef}>
         {showMenu && (
           <div
-            className={`absolute bottom-full mb-2 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-50 ${
-              isOpen ? 'left-0 w-full' : 'left-14 w-48'
+            className={`absolute bottom-full mb-3 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+              isOpen ? 'left-0 w-full' : 'left-16 w-52'
             }`}
           >
-            <div className="px-3 py-2 border-b border-slate-100">
-              <p className="text-xs font-semibold text-slate-800 truncate">{user?.name}</p>
+            <div className="px-3 py-2 border-b border-slate-100 mb-1">
+              <p className="text-xs font-bold text-slate-800 truncate">{user?.name}</p>
               <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
             </div>
             <button
               type="button"
+              onClick={() => {
+                setShowMenu(false);
+                navigate('/profile');
+              }}
+              className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 rounded-xl transition cursor-pointer"
+            >
+              <FiUser className="text-sm text-slate-400 shrink-0" />
+              <span>Hồ sơ cá nhân</span>
+            </button>
+            <button
+              type="button"
               onClick={handleLogout}
-              className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition"
+              className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer mt-0.5"
             >
               <FiLogOut className="text-sm shrink-0" />
               <span>Đăng xuất</span>
@@ -171,21 +194,38 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
           </div>
         )}
 
-        <div className={`pt-3 border-t border-slate-100 flex items-center w-full ${isOpen ? 'justify-between px-1' : 'justify-center'}`}>
+        <div
+          className={`pt-3 border-t border-slate-100 flex items-center w-full ${
+            isOpen ? 'justify-between px-1' : 'justify-center'
+          }`}
+        >
           <button
             type="button"
             onClick={() => setShowMenu((prev) => !prev)}
-            className="flex items-center gap-3 bg-transparent border-0 p-0 cursor-pointer"
+            className="flex items-center gap-3 bg-transparent border-0 p-0 cursor-pointer min-w-0"
           >
-            <div className="relative w-9 h-9 rounded-full bg-teal-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+            <div className="relative w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden border border-slate-200">
+              {user?.avatar ? (
+                <img
+                  src={getPreviewUrl(user.avatar)}
+                  alt={user.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center text-white font-bold">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+              )}
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
             </div>
 
             {isOpen && (
-              <div className="flex flex-col text-left truncate">
+              <div className="flex flex-col text-left truncate min-w-0">
                 <span className="text-xs font-semibold text-slate-800 truncate">{user?.name}</span>
-                <span className="text-[10px] text-slate-400">Online</span>
+                <span className="text-[10px] font-medium text-emerald-600 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Trực tuyến
+                </span>
               </div>
             )}
           </button>
@@ -194,8 +234,8 @@ const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
             <button
               type="button"
               onClick={() => setShowMenu((prev) => !prev)}
-              className={`p-1.5 rounded-lg transition ${
-                showMenu ? 'bg-slate-100 text-slate-700' : 'text-slate-400 hover:bg-slate-50'
+              className={`p-1.5 rounded-xl transition cursor-pointer ${
+                showMenu ? 'bg-slate-100 text-slate-800' : 'text-slate-400 hover:bg-slate-100/70 hover:text-slate-600'
               }`}
             >
               <BsThreeDots className="text-lg" />

@@ -5,6 +5,12 @@ import { User } from '../user';
 
 const COLLECTION_NAME_FILES = 'files';
 
+export enum FileScope {
+  DRIVE = 'drive',
+  CHAT = 'chat',
+  AVATAR = 'avatar',
+}
+
 export type FileUploadDocument = FileUploadModel & Document;
 
 @Schema({
@@ -12,6 +18,13 @@ export type FileUploadDocument = FileUploadModel & Document;
   timestamps: true,
 })
 export class FileUploadModel {
+  @Prop({
+    type: String,
+    enum: Object.values(FileScope),
+    default: FileScope.DRIVE,
+    index: true,
+  })
+  scope!: string;
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     ref: User.name,

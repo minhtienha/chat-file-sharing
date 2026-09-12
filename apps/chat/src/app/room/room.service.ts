@@ -29,7 +29,9 @@ export class RoomService {
   async createRoom(creatorId: string, dto: CreateChatRoomDto): Promise<any> {
     const memberIdsSet = new Set([...dto.memberIds, creatorId]);
     const memberIdsArray = Array.from(memberIdsSet);
-    const isDirectChat = memberIdsArray.length === 2;
+    const isDirectChat =
+      memberIdsArray.length === 2 &&
+      (!dto.name || dto.name === 'Direct Chat' || dto.name === 'Cuộc trò chuyện');
 
     let targetRoomId: string | Types.ObjectId;
 
@@ -154,6 +156,7 @@ export class RoomService {
         $match: {
           $or: [
             { 'lastMessage._id': { $exists: true } },
+            { 'room.isGroup': true },
             { $expr: { $gt: [{ $size: '$members' }, 2] } },
           ],
         },

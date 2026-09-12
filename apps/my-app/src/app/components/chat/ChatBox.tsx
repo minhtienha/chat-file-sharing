@@ -12,6 +12,7 @@ import { getRoomDisplayName, getRoomAvatar } from '../../utils/chatNameHelper';
 import { decodeMessageContent, encodeMessageContent, getSenderId } from '../../utils/messageContent';
 import type { DriveFile } from '../../types/drive.types';
 import { toast } from 'react-toastify';
+import UserAvatar from '../common/UserAvatar';
 
 interface ChatBoxProps {
   currentRoom: ChatRoom;
@@ -49,12 +50,12 @@ const FileBlock = ({ files, isMe }: { files: MessageAttachment[]; isMe: boolean 
               href={previewUrl}
               target="_blank"
               rel="noreferrer"
-              className="block overflow-hidden rounded-xl border border-slate-200/50"
+              className="block overflow-hidden rounded-2xl border border-slate-200/50 shadow-xs hover:opacity-95 transition"
             >
               <img
                 src={previewUrl}
                 alt={file.name}
-                className="max-h-56 max-w-full object-cover bg-slate-50"
+                className="max-h-60 max-w-full object-cover bg-slate-50"
               />
             </a>
           );
@@ -66,22 +67,22 @@ const FileBlock = ({ files, isMe }: { files: MessageAttachment[]; isMe: boolean 
             key={file.gridfsFileId}
             href={downloadUrl}
             download={file.name}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition ${
+            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all ${
               isMe
-                ? 'bg-white/20 text-white hover:bg-white/30'
-                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                ? 'bg-white/15 text-white hover:bg-white/25 border border-white/20'
+                : 'bg-slate-50 border border-slate-200/80 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
             }`}
           >
-            <div className={`p-1.5 rounded-lg shrink-0 ${isMe ? 'bg-white/20' : 'bg-slate-100'}`}>
+            <div className={`p-2 rounded-lg shrink-0 ${isMe ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-600'}`}>
               <FiFile className="text-base" />
             </div>
-            <div className="flex flex-col min-w-0 flex-1 w-40">
-              <span className="truncate font-medium">{file.name}</span>
-              <span className={`text-[10px] ${isMe ? 'text-indigo-100' : 'text-slate-400'}`}>
+            <div className="flex flex-col min-w-0 flex-1 w-44">
+              <span className="truncate font-semibold">{file.name}</span>
+              <span className={`text-[10px] mt-0.5 ${isMe ? 'text-indigo-100' : 'text-slate-400'}`}>
                 {file.size ? (file.size / 1024 / 1024).toFixed(2) + ' MB' : '0 MB'}
               </span>
             </div>
-            <FiDownload className="shrink-0 text-base opacity-70" />
+            <FiDownload className="shrink-0 text-base opacity-80 hover:opacity-100" />
           </a>
         );
       })}
@@ -217,9 +218,9 @@ const ChatBox = ({ currentRoom, onToggleDetails, onSendMessageSuccess, onBack }:
       setSending(true);
 
       let attachments: MessageAttachment[] = [];
-      // Nếu có tệp, upload lên Drive trước
+      // Nếu có tệp, upload lưu trữ với scope='chat' (không đưa vào Drive cá nhân)
       if (files && files.length > 0) {
-        const uploaded: DriveFile[] = await uploadFiles(files);
+        const uploaded: DriveFile[] = await uploadFiles(files, 'chat');
         attachments = uploaded.map((file) => ({
           gridfsFileId: file.gridfsFileId,
           name: file.name,
@@ -359,42 +360,43 @@ const ChatBox = ({ currentRoom, onToggleDetails, onSendMessageSuccess, onBack }:
       className="flex-1 h-full flex flex-col bg-white min-w-0 min-h-0"
     >
       {/* Header */}
-      <div className="h-14 lg:h-16 px-3 lg:px-6 border-b border-slate-100 flex items-center justify-between shrink-0 shadow-sm z-10 relative">
-        <div className="flex items-center gap-2 min-w-0">
+      <div className="h-14 lg:h-16 px-3 lg:px-6 border-b border-slate-100 bg-white flex items-center justify-between shrink-0 shadow-xs z-10 relative">
+        <div className="flex items-center gap-3 min-w-0">
           {/* Nút quay lại (chỉ hiện trên Mobile/Tablet) */}
           {onBack && (
             <button
               type="button"
               onClick={onBack}
-              className="lg:hidden p-2 -ml-1 rounded-xl text-slate-500 hover:bg-slate-50 cursor-pointer"
+              className="lg:hidden p-2 -ml-1.5 rounded-xl text-slate-500 hover:bg-slate-100 transition cursor-pointer"
+              title="Quay lại danh sách"
             >
               <FiArrowLeft className="text-xl" />
             </button>
           )}
           <div className="relative shrink-0">
-            {partnerAvatar ? (
-              <img
-                src={partnerAvatar}
-                alt={roomName}
-                className="w-10 h-10 rounded-full object-cover border border-slate-200"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-indigo-500 text-white font-semibold text-xs flex items-center justify-center">
-                {(roomName || 'U').charAt(0).toUpperCase()}
-              </div>
-            )}
+            <UserAvatar
+              name={roomName}
+              avatar={partnerAvatar}
+              size="md"
+              className="w-10 h-10"
+            />
             <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
           </div>
-          <div className="min-w-0">
-            <h3 className="text-sm font-bold text-slate-800 truncate">{roomName}</h3>
+          <div className="min-w-0 flex flex-col">
+            <h3 className="text-sm font-bold text-slate-800 truncate leading-tight">{roomName}</h3>
+            <span className="text-[10px] font-medium text-emerald-600 flex items-center gap-1 mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+              Đang hoạt động
+            </span>
           </div>
         </div>
 
+        {/* Nút mở RoomDetail (hiện ở cả Desktop và Mobile) */}
         <button
           type="button"
           onClick={onToggleDetails}
-          className="hidden lg:inline-flex p-2 rounded-xl hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition"
-          title="Chi tiết phòng"
+          className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100/80 transition cursor-pointer flex items-center justify-center"
+          title="Thông tin cuộc trò chuyện"
         >
           <FiInfo className="text-xl" />
         </button>
@@ -499,17 +501,12 @@ const ChatBox = ({ currentRoom, onToggleDetails, onSendMessageSuccess, onBack }:
 
                   return (
                     <div className="flex items-start gap-3">
-                      {senderAvatar ? (
-                        <img
-                          src={senderAvatar}
-                          alt={senderName}
-                          className="w-9 h-9 rounded-full object-cover shrink-0 mt-1 border border-slate-200"
-                        />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full bg-indigo-500 text-white font-semibold text-xs flex items-center justify-center shrink-0 mt-1">
-                          {senderName.charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                      <UserAvatar
+                        name={senderName}
+                        avatar={senderAvatar}
+                        size="md"
+                        className="mt-1"
+                      />
                       <div className="space-y-1.5 max-w-[85%] lg:max-w-[70%]">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-slate-700">{senderName}</span>

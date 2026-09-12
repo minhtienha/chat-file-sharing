@@ -39,10 +39,13 @@ export class AppController {
   async upload(
     @CurrentUser() currentUser: UserDocument,
     @UploadedFiles() files: Express.Multer.File[],
+    @Query('scope') queryScope?: string,
+    @Body('scope') bodyScope?: string,
   ) {
     const ownerId = currentUser?._id;
+    const scope = (queryScope || bodyScope || 'drive') as 'drive' | 'chat' | 'avatar';
 
-    return await this.appService.uploadedFiles(files, ownerId);
+    return await this.appService.uploadedFiles(files, ownerId, scope);
   }
 
   @Get('my-files')

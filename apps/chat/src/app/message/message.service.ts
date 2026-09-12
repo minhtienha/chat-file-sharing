@@ -171,7 +171,7 @@ export class MessageService {
     return { success: true, lastReadAt: nowIso };
   }
 
-  // MỚI: Lấy danh sách attachments (dựa trên chuỗi __has_files__ trong content)
+  // Lấy danh sách attachments (hỗ trợ cả schema msg.attachments chuẩn và legacy __has_files__)
   async getRoomAttachments(roomId: string, userId: string) {
     const roomObjectId = new Types.ObjectId(roomId);
     const userObjectId = new Types.ObjectId(userId);
@@ -179,22 +179,63 @@ export class MessageService {
     const chatMember = await this.chatRoomMemberModel.findOne({ roomId: roomObjectId, userId: userObjectId }).exec();
     if (!chatMember) throw new ForbiddenException('Bạn không có quyền truy cập');
 
-    // Tìm tất cả tin nhắn chứa file
-    const messages = await this.messageModel.find({
+    // Tìm tất cả tin nhắn chứa attachments hoặc định dạng cũ
+    const filter: any = {
       roomId: roomObjectId,
-      content: { $regex: '^__has_files__' },
-      __isDeleted: { $ne: true }
-    }).sort({ createdAt: -1 }).lean().exec();
+      createdAt: { $gt: chatMember.deletedAt || new Date(0) },
+      __isDeleted: { $ne: true },
+      $or: [
+        { 'attachments.0': { $exists: true } },
+        { content: { $regex: '^__has_files__' } },
+        { type: 'FILE' },
+      ],
+    };
 
-    let attachments = [];
-    messages.forEach(msg => {
-      try {
-         const jsonStr = msg.content.replace('__has_files__', '');
-         const parsed = JSON.parse(jsonStr);
-         if (parsed.files && parsed.files.length > 0) {
-           attachments = attachments.concat(parsed.files.map(f => ({ ...f, messageId: msg._id, createdAt: msg.createdAt })));
-         }
-      } catch (e) {}
+    const messages = await this.messageModel
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+
+    const attachments: any[] = [];
+    messages.forEach((msg: any) => {
+      // 1. Dữ liệu chuẩn mới: msg.attachments là mảng các tệp
+      if (Array.isArray(msg.attachments) && msg.attachments.length > 0) {
+        msg.attachments.forEach((att: any) => {
+          attachments.push({
+            gridfsFileId: att.gridfsFileId || att.fileId || att._id,
+            name: att.name || att.filename || 'Tệp đính kèm',
+            contentType: att.contentType || att.mimeType || '',
+            size: att.size || 0,
+            messageId: msg._id,
+            senderId: msg.senderId,
+            createdAt: msg.createdAt,
+          });
+        });
+      }
+
+      // 2. Dữ liệu cũ: nội dung tin nhắn bắt đầu bằng __has_files__
+      if (msg.content && typeof msg.content === 'string' && msg.content.startsWith('__has_files__')) {
+        try {
+          const jsonStr = msg.content.replace('__has_files__', '');
+          const parsed = JSON.parse(jsonStr);
+          if (Array.isArray(parsed.files) && parsed.files.length > 0) {
+            parsed.files.forEach((f: any) => {
+              attachments.push({
+                gridfsFileId: f.gridfsFileId || f.fileId,
+                name: f.name || f.filename || 'Tệp đính kèm',
+                contentType: f.contentType || f.mimeType || '',
+                size: f.size || 0,
+                messageId: msg._id,
+                senderId: msg.senderId,
+                createdAt: msg.createdAt,
+              });
+            });
+          }
+        } catch (e) {
+          // Bỏ qua nếu parse thất bại
+        }
+      }
     });
 
     return attachments;

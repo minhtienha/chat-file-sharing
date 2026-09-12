@@ -37,7 +37,7 @@ const MainLayout = () => {
 
   return (
     <div
-      className="flex flex-col w-full bg-slate-50 overflow-hidden"
+      className="flex flex-col w-full bg-slate-50/60 overflow-hidden"
       style={{
         height: viewportHeight,
         transform: viewportOffset ? `translateY(${viewportOffset}px)` : undefined,
@@ -51,13 +51,17 @@ const MainLayout = () => {
         />
 
         {/* Khu vực nội dung chính */}
-        <main className="flex-1 flex min-w-0 overflow-hidden">
+        <main className="flex-1 flex min-w-0 overflow-hidden bg-slate-50/60">
           <Outlet />
         </main>
       </div>
 
-      {/* Bottom bar chỉ hiện trên Mobile/Tablet (< lg); ẩn khi bàn phím mở */}
-      <BottomNav hidden={isKeyboardOpen} />
+      {/* Bottom Navigation chỉ hiện trên Mobile (< lg); ẩn khi bàn phím mở */}
+      {!isKeyboardOpen && (
+        <div className="lg:hidden px-3.5 pb-2.5 pt-1 shrink-0 bg-slate-50/80">
+          <BottomNav />
+        </div>
+      )}
     </div>
   );
 };

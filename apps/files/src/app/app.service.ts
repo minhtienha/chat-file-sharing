@@ -4,6 +4,7 @@ import {
   HttpStatus,
   NotFoundException,
   ForbiddenException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import mongoose, { Connection, Model, Types } from 'mongoose';
@@ -15,11 +16,13 @@ import {
   FileUploadDocument,
   FileUploadModel,
   GridFSFile,
+  Message,
+  MessageDocument,
 } from '@sharing/models';
 import * as path from 'path';
 
 @Injectable()
-export class AppService {
+export class AppService implements OnModuleInit {
   private fileModel: MongoGridFS;
 
   constructor(
@@ -28,14 +31,50 @@ export class AppService {
     private readonly fileUploadModel: Model<FileUploadDocument>,
     @InjectModel(FileShareLinkModel.name)
     private readonly shareLinkModel: Model<FileShareLinkDocument>,
+    @InjectModel(Message.name)
+    private readonly messageModel: Model<MessageDocument>,
   ) {
     this.fileModel = new MongoGridFS(this.connection.db as any, 'fs');
+  }
+
+  // Tự động đồng bộ các file đã gửi trong chat để gắn scope = 'chat'
+  async onModuleInit() {
+    try {
+      const chatMessages = await this.messageModel
+        .find({ 'attachments.0': { $exists: true } }, { attachments: 1 })
+        .lean()
+        .exec();
+
+      const chatGridfsIds: Types.ObjectId[] = [];
+      chatMessages.forEach((msg: any) => {
+        if (Array.isArray(msg.attachments)) {
+          msg.attachments.forEach((att: any) => {
+            const id = att.gridfsFileId || att.fileId;
+            if (id && Types.ObjectId.isValid(id)) {
+              chatGridfsIds.push(new Types.ObjectId(id));
+            }
+          });
+        }
+      });
+
+      if (chatGridfsIds.length > 0) {
+        await this.fileUploadModel.updateMany(
+          { gridfsFileId: { $in: chatGridfsIds }, scope: { $ne: 'chat' } },
+          { $set: { scope: 'chat' } },
+        );
+      }
+    } catch (e) {
+      console.warn('Không thể tự động đồng bộ scope file chat cũ:', e);
+    }
   }
 
   async uploadedFiles(
     files: any[],
     ownerId: mongoose.Types.ObjectId,
+    scope: 'drive' | 'chat' | 'avatar' = 'drive',
   ): Promise<FileUploadDocument[]> {
+    const validScope = ['drive', 'chat', 'avatar'].includes(scope) ? scope : 'drive';
+
     const docs = files.map((file) => {
       const ext = path
         .extname(file.originalname)
@@ -50,6 +89,7 @@ export class AppService {
         contentType: file.mimetype,
         size: file.size,
         source: 'gridfs' as const,
+        scope: validScope,
         metadata: file.metadata || {},
       };
     });
@@ -85,7 +125,13 @@ export class AppService {
     const skip = (page - 1) * limit;
 
     const pipeline: any[] = [
-      { $match: { ownerId: new Types.ObjectId(ownerId) } },
+      {
+        $match: {
+          ownerId: new Types.ObjectId(ownerId),
+          // Chỉ hiển thị file trong Drive của tôi, tuyệt đối KHÔNG hiển thị file gửi qua chat hoặc ảnh avatar
+          scope: { $nin: ['chat', 'avatar'] },
+        },
+      },
       {
         $lookup: {
           from: 'file_share_links',

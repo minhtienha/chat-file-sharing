@@ -28,12 +28,14 @@ export const getMyFiles = async (page = 1, limit = 20): Promise<{ data: DriveFil
 
 export const uploadFiles = async (
   files: FileList | File[],
+  scope: 'drive' | 'chat' | 'avatar' = 'drive',
 ): Promise<DriveFile[]> => {
   const formData = new FormData();
   Array.from(files).forEach((file) => formData.append('file', file));
+  formData.append('scope', scope);
 
   const token = useBearerTokenStore.getState().accessToken;
-  const res = await fetch(`${FILE_API_URL}`, {
+  const res = await fetch(`${FILE_API_URL}?scope=${scope}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
@@ -42,6 +44,10 @@ export const uploadFiles = async (
   if (!res.ok) throw new Error('Tải lên file thất bại (tối đa 5MB/file)');
   return res.json();
 };
+
+export const uploadChatFiles = (files: FileList | File[]) => uploadFiles(files, 'chat');
+export const uploadDriveFiles = (files: FileList | File[]) => uploadFiles(files, 'drive');
+export const uploadAvatarFile = (file: File) => uploadFiles([file], 'avatar');
 
 export const deleteFile = async (gridfsFileId: string) => {
   const res = await fetch(`${FILE_API_URL}/${gridfsFileId}`, {

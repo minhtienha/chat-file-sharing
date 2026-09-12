@@ -64,7 +64,6 @@ const ChatPage = () => {
         <MessageList
           activeRoom={selectedRoom}
           setActiveRoom={setSelectedRoom}
-          refreshTrigger={refreshTrigger}
         />
       </div>
 
@@ -83,14 +82,14 @@ const ChatPage = () => {
             <ChatBox
               currentRoom={selectedRoom}
               onToggleDetails={() => setShowDetails((prev) => !prev)}
-              onSendMessageSuccess={() => setRefreshTrigger((prev) => prev + 1)}
               onBack={() => setSelectedRoom(null)} // Quay lại danh sách phòng (mobile)
             />
-            {/* Component chi tiết phòng bên phải (chỉ hiện trên Desktop) */}
+            {/* Component chi tiết phòng bên phải (Desktop: sidebar, Mobile: full screen) */}
             <RoomDetail
               currentRoom={selectedRoom}
               isOpen={showDetails}
               onClose={() => setShowDetails(false)}
+              refreshTrigger={refreshTrigger}
               onRoomDeleted={() => {
                 setSelectedRoom(null);
                 setRefreshTrigger((prev) => prev + 1);
@@ -102,8 +101,18 @@ const ChatPage = () => {
             />
           </>
         ) : (
-          <div className="flex-1 hidden lg:flex items-center justify-center text-slate-400 text-sm bg-slate-50/50">
-            Chưa có cuộc trò chuyện nào
+          <div className="flex-1 hidden lg:flex flex-col items-center justify-center p-8 text-center bg-slate-50/40 select-none">
+            <div className="w-16 h-16 rounded-3xl bg-indigo-50/80 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-4 shadow-sm shadow-indigo-100/50">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+            <h3 className="text-base font-bold text-slate-800 mb-1">
+              Chưa chọn cuộc trò chuyện
+            </h3>
+            <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
+              Chọn một người bạn từ danh sách bên trái hoặc tìm kiếm thành viên mới để bắt đầu cuộc trò chuyện.
+            </p>
           </div>
         )}
       </div>
