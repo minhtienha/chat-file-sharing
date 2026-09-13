@@ -10,7 +10,12 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway({
+  cors: {
+    origin: true,
+    credentials: true,
+  },
+})
 export class ChatGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
@@ -23,7 +28,8 @@ export class ChatGateway
   }
 
   handleConnection(client: Socket) {
-    const userId = client.handshake.auth?.userId || client.handshake.query?.userId;
+    const userId =
+      client.handshake.auth?.userId || client.handshake.query?.userId;
     if (userId) {
       client.join(String(userId));
       console.log(`✅ Client ${client.id} joined personal room: ${userId}`);
@@ -43,7 +49,9 @@ export class ChatGateway
   ) {
     if (data?.userId) {
       client.join(String(data.userId));
-      console.log(`👤 Client ${client.id} đã join vào room user: ${data.userId}`);
+      console.log(
+        `👤 Client ${client.id} đã join vào room user: ${data.userId}`,
+      );
     }
   }
 
