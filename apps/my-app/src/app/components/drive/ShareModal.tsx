@@ -17,7 +17,8 @@ import {
   deleteShareLink,
 } from '../../services/drive.service';
 
-const FILE_API_URL = 'http://localhost:3002/api/files';
+export const FILE_API_URL =
+  import.meta.env.VITE_FILE_API_URL || 'http://localhost:3002/api/files';
 
 interface ShareModalProps {
   file: DriveFile | null;

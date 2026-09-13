@@ -1,8 +1,10 @@
 import { useBearerTokenStore } from '../stores/auth.store';
 import { LoginPayload, RegisterPayload } from '../types/index';
 
-const AUTH_API_URL = 'http://localhost:3000/api/auth';
-const USER_API_URL = 'http://localhost:3001/api/users';
+const AUTH_API_URL =
+  import.meta.env.VITE_AUTH_API_URL || 'http://localhost:3000/api/auth';
+const USER_API_URL =
+  import.meta.env.VITE_USER_API_URL || 'http://localhost:3001/api/users';
 
 export const loginApi = async (payload: LoginPayload) => {
   const res = await fetch(`${AUTH_API_URL}/login`, {
@@ -68,7 +70,11 @@ export const getMe = async () => {
   return res.json();
 };
 
-export const updateProfile = async (payload: { name?: string; password?: string; avatar?: string }) => {
+export const updateProfile = async (payload: {
+  name?: string;
+  password?: string;
+  avatar?: string;
+}) => {
   const token = useBearerTokenStore.getState().accessToken;
   const res = await fetch(`${USER_API_URL}/profile`, {
     method: 'PATCH',

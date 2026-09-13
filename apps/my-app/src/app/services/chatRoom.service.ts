@@ -1,7 +1,9 @@
 import { useBearerTokenStore } from '../stores/auth.store';
 
-const CHAT_API_URL = 'http://localhost:3003/api';
-const USER_API_URL = 'http://localhost:3001/api';
+const CHAT_API_URL =
+  import.meta.env.VITE_CHAT_API_URL || 'http://localhost:3003/api';
+const USER_API_URL =
+  import.meta.env.VITE_USER_API_URL || 'http://localhost:3001/api/users';
 
 const getAuthHeaders = (isJson = false) => {
   const token = useBearerTokenStore.getState().accessToken;
@@ -12,9 +14,12 @@ const getAuthHeaders = (isJson = false) => {
 };
 
 export const searchUsers = async (query: string) => {
-  const res = await fetch(`${USER_API_URL}/users/search?q=${encodeURIComponent(query)}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `${USER_API_URL}/search?q=${encodeURIComponent(query)}`,
+    {
+      headers: getAuthHeaders(),
+    },
+  );
   if (!res.ok) throw new Error('Không thể tìm kiếm user');
   return res.json();
 };
@@ -26,18 +31,25 @@ export const getChatRooms = async (search?: string, page = 1, limit = 20) => {
   params.append('limit', limit.toString());
 
   const queryString = params.toString() ? `?${params.toString()}` : '';
-  const res = await fetch(`${CHAT_API_URL}/chat-rooms${queryString}`, { headers: getAuthHeaders() });
+  const res = await fetch(`${CHAT_API_URL}/chat-rooms${queryString}`, {
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
   return res.json();
 };
 
 export const getRoomById = async (roomId: string) => {
-  const res = await fetch(`${CHAT_API_URL}/chat-rooms/${roomId}`, { headers: getAuthHeaders() });
+  const res = await fetch(`${CHAT_API_URL}/chat-rooms/${roomId}`, {
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
   return res.json();
 };
 
-export const createChatRoom = async (payload: { name: string; memberIds: string[] }) => {
+export const createChatRoom = async (payload: {
+  name: string;
+  memberIds: string[];
+}) => {
   const res = await fetch(`${CHAT_API_URL}/chat-rooms`, {
     method: 'POST',
     headers: getAuthHeaders(true),
@@ -76,12 +88,20 @@ export const deleteRoomEntirely = async (roomId: string) => {
 };
 
 export const getMessages = async (roomId: string, page: number, limit = 20) => {
-  const res = await fetch(`${CHAT_API_URL}/chat-rooms/${roomId}/messages?page=${page}&limit=${limit}`, { headers: getAuthHeaders() });
+  const res = await fetch(
+    `${CHAT_API_URL}/chat-rooms/${roomId}/messages?page=${page}&limit=${limit}`,
+    { headers: getAuthHeaders() },
+  );
   if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
   return res.json();
 };
 
-export const sendMessage = async (roomId: string, content: string, type: 'TEXT' | 'FILE' = 'TEXT', attachments?: any[]) => {
+export const sendMessage = async (
+  roomId: string,
+  content: string,
+  type: 'TEXT' | 'FILE' = 'TEXT',
+  attachments?: any[],
+) => {
   const payload: any = {
     type,
     content: content || '',

@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { useBearerTokenStore } from '../stores/auth.store';
 
-const SOCKET_URL = 'http://localhost:3003';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3003';
 
 let socketInstance: Socket | null = null;
 
