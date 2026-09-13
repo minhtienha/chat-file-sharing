@@ -1,7 +1,8 @@
 import { useBearerTokenStore } from '../stores/auth.store';
 import { DriveFile, ShareLinkResponse } from '../types/drive.types';
 
-const FILE_API_URL = 'http://localhost:3002/api/files';
+const FILE_API_URL =
+  import.meta.env.VITE_FILE_API_URL || 'http://localhost:3002/api/files';
 
 const getAuthHeaders = (isJson = false) => {
   const token = useBearerTokenStore.getState().accessToken;
